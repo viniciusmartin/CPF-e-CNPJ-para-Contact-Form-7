@@ -2,55 +2,57 @@
 
 defined('ABSPATH') or die();
 
-function cf7vm_validate_CNPJ($cnpj = null) {
+function cf7vm_validate_cnpj($cnpj = null) {
 
-	if(empty($cnpj)) {
-
+	if( empty($cnpj) ){
 		return false;
-
 	}
 
-	$cnpj = preg_replace("/[^0-9]/", "", $cnpj);
-	$cnpj = str_pad($cnpj, 14, '0', STR_PAD_LEFT);
-
-	if (strlen($cnpj) != 14) {
-
+	if ($cnpj == '00.000.000/0000-00' || $cnpj == '11.111.111/1111-11' || $cnpj == '22.222.222/2222-22' || $cnpj == '33.333.333/3333-33' || $cnpj == '44.444.444/4444-44' || $cnpj == '55.555.555/5555-55' || $cnpj == '66.666.666/6666-66' || $cnpj == '77.777.777/7777-77' || $cnpj == '88.888.888/8888-88' || $cnpj == '99.999.999/9999-99') {
 		return false;
+	}
 
-	} else if ($cnpj == '00000000000000' || $cnpj == '11111111111111' || $cnpj == '22222222222222' || $cnpj == '33333333333333' || $cnpj == '44444444444444' || $cnpj == '55555555555555' || $cnpj == '66666666666666' || $cnpj == '77777777777777' || $cnpj == '88888888888888' || $cnpj == '99999999999999') {
+	$cnpj = preg_replace( '/[^0-9]/', '', $cnpj );
+	
+	$cnpj = (string)$cnpj;
+	
+	$cnpj_original = $cnpj;
+	
+	$primeiros_numeros_cnpj = substr( $cnpj, 0, 12 );
 
-		return false;
+	if ( ! function_exists('multiplica_cnpj') ) {
+		function multiplica_cnpj( $cnpj, $posicao = 5 ) {
 
-	 } else {   
-	 
-		$j = 5;
-		$k = 6;
-		$soma1 = "";
-		$soma2 = "";
+			$calculo = 0;
+			
+			for ( $i = 0; $i < strlen( $cnpj ); $i++ ) {
 
-		for ($i = 0; $i < 13; $i++) {
+				$calculo = $calculo + ( $cnpj[$i] * $posicao );
+				
+				$posicao--;
 
-			$j = $j == 1 ? 9 : $j;
-			$k = $k == 1 ? 9 : $k;
-
-			$soma2 += ($cnpj{$i} * $k);
-
-			if ($i < 12) {
-
-				$soma1 += ($cnpj{$i} * $j);
-
+				if ( $posicao < 2 ) {
+					$posicao = 9;
+				}
 			}
 
-			$k--;
-			$j--;
-
+			return $calculo;
 		}
+	}
 
-		$digito1 = $soma1 % 11 < 2 ? 0 : 11 - $soma1 % 11;
-		$digito2 = $soma2 % 11 < 2 ? 0 : 11 - $soma2 % 11;
+	$primeiro_calculo = multiplica_cnpj( $primeiros_numeros_cnpj );
 
-		return (($cnpj{12} == $digito1) and ($cnpj{13} == $digito2));
-	 
+	$primeiro_digito = ( $primeiro_calculo % 11 ) < 2 ? 0 :  11 - ( $primeiro_calculo % 11 );
+	
+	$primeiros_numeros_cnpj .= $primeiro_digito;
+
+	$segundo_calculo = multiplica_cnpj( $primeiros_numeros_cnpj, 6 );
+	$segundo_digito = ( $segundo_calculo % 11 ) < 2 ? 0 :  11 - ( $segundo_calculo % 11 );
+
+	$cnpj = $primeiros_numeros_cnpj . $segundo_digito;
+
+	if ( $cnpj === $cnpj_original ) {
+		return true;
 	}
 
 }
